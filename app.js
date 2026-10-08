@@ -75,13 +75,13 @@ app.use("/listings", listingRouter);
 app.use("/listings/:id/reviews", reviewRouter);
 app.use("/", userRouter);
 
-main()
-  .then(() => {
-    console.log("connected to DB");
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+// main()
+//   .then(() => {
+//     console.log("connected to DB");
+//   })
+//   .catch((err) => {
+//     console.log(err);
+//   });
 
 async function main() {
   await mongoose.connect(dbUrl);
@@ -91,11 +91,11 @@ app.get("/", (req, res) => {
   res.redirect("/listings");
 });
 
-app.use((err, req, res, next) => {
-  let { statusCode = 500, message = "something went wrong" } = err;
-  res.status(statusCode).render("error.ejs", { message });
-  // res.status(statusCode).send(message);
-});
+// app.use((err, req, res, next) => {
+//   let { statusCode = 500, message = "something went wrong" } = err;
+//   res.status(statusCode).render("error.ejs", { message });
+//   // res.status(statusCode).send(message);
+// });
 
 // const PORT = process.env.PORT || 8080;
 
@@ -103,4 +103,40 @@ app.use((err, req, res, next) => {
 //   console.log(`Server running on port ${PORT}`);
 // });
 
+let isConnected = false;
+
+async function connectDB() {
+  if (isConnected) {
+    return;
+  }
+
+  try {
+    await mongoose.connect(process.env.ATLASDB_URL);
+    isConnected = true;
+    console.log("Connected to MongoDB");
+  } catch (error) {
+    console.error("MongoDB connection error:", error);
+    throw error;
+  }
+}
+
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/", (req, res) => {
+  res.redirect("/listings");
+});
+
+app.use((err, req, res, next) => {
+  let { statusCode = 500, message = "something went wrong" } = err;
+  res.status(statusCode).render("error.ejs", { message });
+});
+
 module.exports = app;
+// module.exports = app;
